@@ -1,0 +1,8 @@
+SpeechRecognition
+pyttsx3
+wikipedia
+pyjokes
+# google-generative-ai  # commented out: not available on PyPI — install manually if needed
+gTTS
+deep-translator
+pygame
