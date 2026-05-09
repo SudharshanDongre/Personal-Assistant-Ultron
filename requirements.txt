@@ -6,3 +6,4 @@ pyjokes
 gTTS
 deep-translator
 pygame
+yt-dlp
