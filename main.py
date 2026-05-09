@@ -6,6 +6,7 @@ import datetime
 import random
 import wikipedia
 import pyjokes
+import yt_dlp
 
 
 
@@ -19,6 +20,7 @@ def set_voice(rate=160, voice_index=2):
 
 set_voice(180)
 def speak(text):
+    print(f"Assistant: {text}")
     engine.say(text)
     engine.runAndWait()
 
@@ -70,8 +72,22 @@ def processCommand(c):
         search = c.lower().replace("play", "").replace("on youtube", "").strip()
         if search:
             speak(f"Sure, playing {search} on YouTube.")
-            query = search.replace(" ", "+")
-            webbrowser.open(f"https://www.youtube.com/results?search_query={query}")
+            try:
+                ydl_opts = {
+                    'quiet': True,
+                    'no_warnings': True,
+                    'default_search': 'ytsearch',
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(f"ytsearch1:{search}", download=False)
+                    if info and 'entries' in info and len(info['entries']) > 0:
+                        video_url = info['entries'][0]['webpage_url']
+                        webbrowser.open(video_url)
+                    else:
+                        speak("Sorry, I couldn't find any videos for that search.")
+            except Exception as e:
+                speak("Sorry, there was an error searching YouTube.")
+                print(f"YouTube search error: {e}")
         else:
             speak("What should I play on YouTube, Sir?")
 
@@ -200,9 +216,9 @@ if __name__ == "__main__":
                 processCommand(command)
 
         except sr.WaitTimeoutError:
-            speak("I didn't hear anything. Please try again.")  # Timeout feedback
+            continue
         except sr.UnknownValueError:
-            speak("Sorry, I didn't catch that. Could you please repeat?")  # Unrecognized speech feedback
+            continue
         except sr.RequestError:
             speak("Sorry, my speech service is down.")
         except Exception as e:
