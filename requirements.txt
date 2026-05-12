@@ -7,3 +7,8 @@ gTTS
 deep-translator
 pygame
 yt-dlp
+faiss-cpu==1.13.2
+chromadb==0.3.21
+sentence-transformers==2.2.2
+langchain==0.0.352
+python-dotenv==1.0.0
