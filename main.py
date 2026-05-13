@@ -20,9 +20,14 @@ def set_voice(rate=160, voice_index=2):
 
 set_voice(180)
 def speak(text):
-    print(f"Assistant: {text}")
-    engine.say(text)
-    engine.runAndWait()
+    import traceback
+    print(f"Assistant: {text}", flush=True)
+    try:
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print("speak error:", repr(e))
+        traceback.print_exc()
 
 
 
@@ -216,8 +221,10 @@ if __name__ == "__main__":
                 processCommand(command)
 
         except sr.WaitTimeoutError:
+            print('WaitTimeoutError: microphone timed out, continuing')
             continue
         except sr.UnknownValueError:
+            print('UnknownValueError: could not understand audio, continuing')
             continue
         except sr.RequestError:
             speak("Sorry, my speech service is down.")
