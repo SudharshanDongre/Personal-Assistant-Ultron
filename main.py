@@ -7,12 +7,73 @@ import random
 import wikipedia
 import pyjokes
 import yt_dlp
+import os
+
+from vectorstore import VectorStore
+from retriever import Retriever
+from embeddings import chunk_text, preprocess_document
+from ingest import load_user_preferences
+from commands import handle_rag_commands, format_response_with_context
 
 
 
 
 recogniser =  sr.Recognizer()
 engine = pyttsx3.init()
+
+
+def _initialize_rag_components():
+    try:
+        store = VectorStore(model_name="all-MiniLM-L6-v2")
+        return store, Retriever(store)
+    except Exception as exc:
+        print(f"RAG initialization warning: {exc}")
+        return None, None
+
+
+vector_store, retriever = _initialize_rag_components()
+CURRENT_USER = "default"
+
+
+def get_current_user():
+    return CURRENT_USER
+
+
+def initialize_user_knowledge(user_id="default"):
+    if vector_store is None:
+        return user_id
+
+    path = os.path.join("user_data", user_id, "vectorstore.pkl")
+    if os.path.exists(path):
+        try:
+            vector_store.load(path)
+        except Exception as exc:
+            print(f"Knowledge load warning for {user_id}: {exc}")
+    else:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+    return user_id
+
+
+def switch_user(user_id):
+    global CURRENT_USER
+    if not user_id or not str(user_id).strip():
+        return False
+
+    CURRENT_USER = str(user_id).strip()
+    initialize_user_knowledge(CURRENT_USER)
+    return True
+
+
+def persist_current_user_knowledge():
+    if vector_store is None:
+        return
+    path = os.path.join("user_data", get_current_user(), "vectorstore.pkl")
+    try:
+        vector_store.save(path)
+    except Exception as exc:
+        print(f"Knowledge save warning: {exc}")
+
+
 def set_voice(rate=160, voice_index=2):
     engine.setProperty('rate', rate)             # 100–200 (default: ~160)
     voices = engine.getProperty('voices')
@@ -45,7 +106,39 @@ def getGreeting():
         return "Working late, Sudarshan Sir? I'm here if you need me."
 
 
+def listen_to_command():
+    try:
+        with sr.Microphone() as source:
+            recogniser.adjust_for_ambient_noise(source, duration=0.3)
+            audio = recogniser.listen(source, timeout=4, phrase_time_limit=6)
+        return recogniser.recognize_google(audio)
+    except Exception:
+        return ""
+
+
 def processCommand(c):
+    user_id = get_current_user()
+    command_lower = c.lower().strip()
+    rag_context = []
+    if retriever is not None:
+        try:
+            rag_context = retriever.retrieve(c, user_id=user_id, top_k=3)
+        except Exception as exc:
+            print(f"Retriever warning: {exc}")
+
+    if retriever is not None and vector_store is not None:
+        handled = handle_rag_commands(
+            command_text=c,
+            current_user=user_id,
+            retriever=retriever,
+            vector_store=vector_store,
+            speak=speak,
+            listen_to_command=listen_to_command,
+            switch_user=switch_user,
+        )
+        if handled:
+            persist_current_user_knowledge()
+            return
     
  #Opening something   
     if "open google" in c.lower():
@@ -153,8 +246,11 @@ def processCommand(c):
         speak(getGreeting())
    
     elif "what can you do" in c or "your abilities" in c or "tum kya kar sakte ho" in c:
-       set_voice(rate=160)
-       speak("I can open different sites, play music, answer questions, make jokes, and can also convert your imagination into reality. Just say the word.")
+        base_response = "I can open different sites, play music, answer questions, make jokes, and can also convert your imagination into reality. Just say the word."
+        context_prefix = format_response_with_context(rag_context)
+        enhanced_response = f"{context_prefix}. {base_response}" if context_prefix else base_response
+        set_voice(rate=160)
+        speak(enhanced_response)
 
     elif "introduce yourself" in c:
         speak("I am Ultron — the bridge between your command and execution. Think it. Say it. I’ll make it happen.")
@@ -173,14 +269,41 @@ def processCommand(c):
 
 #For closeing 
     elif "exit" in c or "stop listening" in c or "good bye" in  c or "goodbye" in c or "bye" in c:
+        persist_current_user_knowledge()
         speak("Shutting down. Goodbye, Sir.")
         
         exit()
 
+    # Personal questions should try memory first before any web fallback.
+    elif (
+        any(word in command_lower for word in ["what", "who", "how"])
+        and any(phrase in command_lower for phrase in [" my ", "about me", "my name", "i prefer", "i like", "me "])
+    ):
+        if rag_context:
+            set_voice(rate=160)
+            speak(format_response_with_context(rag_context))
+        else:
+            prefs = load_user_preferences(user_id)
+            user_name = str(prefs.get("username", "")).strip()
+            if "name" in command_lower and user_name:
+                speak(f"Your name is {user_name}.")
+            else:
+                speak("I do not have that in memory yet. You can teach me by saying add to my knowledge followed by your note.")
+
 #serach on wikipedia
-    elif "what is" in c or "who is" in c or "tell me about" in c or "who" in c or "what" in c or "how" in c:
+    elif command_lower.startswith(("what is", "who is", "tell me about", "how to", "how does", "what are", "who are")):
         try:
-            question= c.lower().replace("what is","").replace("who is","").replace("tell me about","").replace("who","").replace("what","").replace("how","").strip()
+            question = (
+                command_lower
+                .replace("what is", "")
+                .replace("who is", "")
+                .replace("tell me about", "")
+                .replace("how to", "")
+                .replace("how does", "")
+                .replace("what are", "")
+                .replace("who are", "")
+                .strip()
+            )
             result=wikipedia.summary(question,sentences=1)
             set_voice(rate=160)
             speak(f"{result}")
@@ -205,6 +328,11 @@ def processCommand(c):
 
 if __name__ == "__main__":
     # speak("Initializing Ultron..")
+    initialize_user_knowledge(get_current_user())
+    try:
+        load_user_preferences(get_current_user())
+    except Exception as exc:
+        print(f"Preferences warning: {exc}")
     speak("Ultron systems Activated. Awaiting for your command Sir.")
 
     while True:
