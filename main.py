@@ -308,6 +308,7 @@ def processCommand(c):
             set_voice(rate=160)
             speak(f"{result}")
         
+        
         except wikipedia.exceptions.PageError:
             speak("I couldn’t find anything on that topic, Sir.")
 
