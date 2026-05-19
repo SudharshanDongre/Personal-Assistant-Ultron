@@ -12,8 +12,9 @@ import os
 from vectorstore import VectorStore
 from retriever import Retriever
 from embeddings import chunk_text, preprocess_document
-from ingest import load_user_preferences
+from ingest import load_user_preferences as ingest_load_user_preferences
 from commands import handle_rag_commands, format_response_with_context
+import users  # PHASE 5: User Management
 
 
 
@@ -32,11 +33,11 @@ def _initialize_rag_components():
 
 
 vector_store, retriever = _initialize_rag_components()
-CURRENT_USER = "default"
 
 
 def get_current_user():
-    return CURRENT_USER
+    """Get current user ID from users module."""
+    return users.get_current_user()
 
 
 def initialize_user_knowledge(user_id="default"):
@@ -55,13 +56,15 @@ def initialize_user_knowledge(user_id="default"):
 
 
 def switch_user(user_id):
-    global CURRENT_USER
+    """Switch to a different user (uses users module)."""
     if not user_id or not str(user_id).strip():
         return False
-
-    CURRENT_USER = str(user_id).strip()
-    initialize_user_knowledge(CURRENT_USER)
-    return True
+    
+    user_id = str(user_id).strip()
+    success = users.switch_user(user_id)
+    if success:
+        initialize_user_knowledge(user_id)
+    return success
 
 
 def persist_current_user_knowledge():
