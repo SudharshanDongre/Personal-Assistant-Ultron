@@ -1,148 +1,128 @@
-# Voice Assistant 🎤
+# Ultron Voice Assistant
 
-A Python-based voice-activated personal assistant that listens to commands and responds using text-to-speech. The assistant can open websites, play music, search the web, fetch information, and tell jokes—all through voice interaction.
+Ultron is a Python-based voice assistant that has evolved from a command runner into a personalized multi-user assistant with retrieval-augmented memory. It still handles the original web, music, and utility commands, but now it can also learn preferences, store knowledge, and switch between user profiles.
 
-## Features 🚀
+## Current Progress
 
-- **Voice Recognition**: Listens to voice commands using the SpeechRecognition library
-- **Text-to-Speech**: Responds with natural-sounding speech using pyttsx3
-- **Web Browsing**: Open websites like Google, YouTube, LinkedIn, Canva, and more
-- **Music Playback**: Play songs from a customizable music library directly on YouTube
-- **Web Search**: Search Google or YouTube for any query
-- **Information Lookup**: Retrieve information from Wikipedia
-- **Entertainment**: Tell jokes using pyjokes
-- **Time-Based Greetings**: Personalized greetings based on time of day
-- **Customizable Voice**: Adjustable voice speed and voice index
+The project is currently at Phase 5 and the implemented pieces are:
 
-## Supported Commands 🎯
+- Voice input and speech output through `SpeechRecognition` and `pyttsx3`
+- Web browsing, Google search, YouTube search, Wikipedia lookup, jokes, time, and date commands
+- Music playback from the local `musiclibrary.py` mapping
+- RAG-style knowledge storage and retrieval through `ingest.py`, `vectorstore.py`, and `retriever.py`
+- Word-based text chunking and preprocessing in `embeddings.py`
+- Multi-user personalization in `users.py` with per-user folders under `user_data/`
+- Profile learning commands such as name, preferences, and knowledge snippets
 
-### Website Commands
-- "open google" - Opens Google
-- "open youtube" - Opens YouTube
-- "open linkedin" - Opens LinkedIn
-- "open canva" - Opens Canva
-- "open my github profile" - Opens GitHub profile
+## What Ultron Can Do
 
-### Music & Entertainment
-- "play music" or "play song" - View available songs and play them
-- "play [song name]" - Play a specific song from the music library
-- "joke" - Tell a random joke
+### Core Assistant Commands
 
-### Search Commands
-- "search [query]" - Search on Google
-- "play [query] on youtube" - Search and play videos on YouTube
+- Open Google, YouTube, LinkedIn, Canva, and the GitHub profile link
+- Search the web with Google
+- Search and open YouTube results
+- Play songs from the local music library
+- Tell jokes
+- Report the current time and date
+- Respond to simple conversational prompts like greetings and identity questions
 
-### Information
-- Access Wikipedia information (via configured commands)
+### Personalized Knowledge Commands
 
-## Installation 📦
+- `my name is ...` to save the current user name
+- `i like ...` to save a preference
+- `i prefer ...` to save work-style or response preferences
+- `learn my preferences` to capture a spoken preference statement
+- `add to my knowledge ...` to store a custom knowledge snippet
+- `search my docs for ...` to search indexed user knowledge
+- `what do you know about me` to summarize the saved profile and indexed knowledge
+- `switch user to ...` to move to another user profile
+- `forget ...` to remove matching knowledge items
 
-1. **Clone or download this project**
-   ```bash
-   cd "c:\Python\MEGA PROJECT 1"
-   ```
+## Project Structure
 
-2. **Install required dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Dependencies
-- **SpeechRecognition** - Voice input processing
-- **pyttsx3** - Text-to-speech output
-- **wikipedia** - Wikipedia information retrieval
-- **pyjokes** - Joke generation
-- **gTTS** - Google Text-to-Speech
-- **deep-translator** - Translation support
-- **pygame** - Audio playback
-- **google-generative-ai** - (Optional) Google Gemini AI integration
-
-## Usage 🎮
-
-1. **Run the assistant**
-   ```bash
-   python main.py
-   ```
-
-2. **Start giving voice commands** once the assistant greets you
-
-3. **Example commands**:
-   - "open google"
-   - "play barrish on youtube"
-   - "search python tutorials"
-   - "tell me a joke"
-   - "play tum hi ho"
-
-## Project Structure 📁
-
-```
-├── main.py              # Main entry point with command processing
-├── commands.py          # Command handling and definitions
-├── musiclibrary.py      # Music library with YouTube links
-├── voices.py            # Voice configuration and settings
-├── requirements.txt     # Python dependencies
-└── README.md           # This file
+```text
+main.py             # Entry point and command routing
+commands.py         # RAG command handling and context formatting
+users.py            # Multi-user profile management
+ingest.py           # Document and knowledge ingestion helpers
+retriever.py        # Retrieval helpers for user-specific context
+vectorstore.py      # Lightweight per-user vector store
+embeddings.py       # Text preprocessing and chunking helpers
+musiclibrary.py     # Local song name to YouTube link mapping
+voices.py           # Voice configuration helpers
+requirements.txt    # Python dependencies
+user_data/          # Per-user preferences, documents, and saved knowledge
 ```
 
-## Music Library 🎵
+## Data Layout
 
-The music library is stored in `musiclibrary.py` and contains Hindi songs with direct YouTube links. You can easily add more songs by editing the dictionary:
+Each user gets a dedicated folder under `user_data/`.
 
-```python
-music={
-    "song name" : "https://youtube.com/watch?v=...",
-    # Add more songs here
-}
+```text
+user_data/
+  default/
+    preferences.json
+    documents/
+  developer/
+    preferences.json
+    documents/
+  one/
+    preferences.json
+    documents/
 ```
 
-## Customization ⚙️
+The assistant stores profile preferences in `preferences.json` and can also persist vector-store data per user when knowledge is indexed.
 
-### Change Voice Properties
-Edit the `set_voice()` function in `main.py`:
-```python
-def set_voice(rate=160, voice_index=2):
-    engine.setProperty('rate', rate)      # Speed: 100-200
-    voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[voice_index].id)
+## Installation
+
+1. Open the project folder.
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
 ```
 
-### Add New Commands
-Modify the `processCommand()` function in `main.py` to add custom commands
+### Dependency Notes
 
-### Extend Music Library
-Add songs to the `music` dictionary in `musiclibrary.py`
+- `SpeechRecognition` is required for microphone input
+- `pyttsx3` is used for text-to-speech
+- `wikipedia`, `pyjokes`, `yt-dlp`, and `pygame` support the assistant commands
+- `sentence-transformers` is used for embeddings in the vector store
+- `faiss-cpu`, `chromadb`, and `langchain` are available for RAG-related work
+- `google-generative-ai` is still commented out in the requirements and is not yet part of the active flow
 
-## Future Enhancements 🔮
+## Usage
 
-- [ ] Integrate Google Gemini AI for intelligent responses (currently commented out)
-- [ ] Add weather information
-- [ ] Email sending capability
-- [ ] Calendar integration
-- [ ] File management commands
-- [ ] System control commands
+Run the assistant with:
 
-## Requirements Notes ⚠️
+```bash
+python main.py
+```
 
-- **Microphone**: Required for voice input
-- **Internet Connection**: Needed for web browsing, music playback, and information retrieval
-- **Google Gemini Integration**: Requires manual installation of google-generative-ai package and API key setup
+After launch, Ultron listens for commands and speaks responses aloud. The current behavior is centered in `main.py`, which first tries to handle RAG commands and then falls back to the original assistant actions.
 
-## Troubleshooting 🔧
+## Development Notes
 
-- **Microphone not detected**: Check system audio settings and microphone permissions
-- **Speech not recognized**: Speak clearly and adjust background noise
-- **Voice commands not working**: Ensure microphone is properly configured
-- **Import errors**: Reinstall requirements with `pip install -r requirements.txt`
+- `main.py` now uses the `users` module for centralized user switching and profile lookup
+- `commands.py` persists small profile updates and supports retrieval-aware replies
+- `vectorstore.py` keeps documents separated by `user_id`
+- `ingest.py` can load text and PDF documents and turn them into indexed chunks
+- `embeddings.py` currently uses word-based chunking with overlap
 
-## Author
+## Future Work
 
-Created for personal assistance and automation
+- Add weather, email, calendar, and file-management commands
+- Wire in Google Gemini responses if that becomes part of the active design
+- Expand the music library and command coverage
+- Improve search and retrieval ranking for larger knowledge sets
+
+## Troubleshooting
+
+- Make sure the microphone is available and permitted by the OS
+- Install dependencies before running the assistant
+- If embeddings or document search fail, check that the RAG packages were installed successfully
 
 ## License
 
-Feel free to use and modify as needed
-
----
-
-**Happy commanding!** 🎙️
+Use and modify freely for personal learning and automation.
 
