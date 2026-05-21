@@ -25,7 +25,9 @@ engine = pyttsx3.init()
 
 def _initialize_rag_components():
     try:
+        print("Loading RAG components...", flush=True)
         store = VectorStore(model_name="all-MiniLM-L6-v2")
+        print("RAG components loaded.", flush=True)
         return store, Retriever(store)
     except Exception as exc:
         print(f"RAG initialization warning: {exc}")
@@ -33,6 +35,7 @@ def _initialize_rag_components():
 
 
 vector_store, retriever = _initialize_rag_components()
+print("Ultron assistant loaded successfully.", flush=True)
 
 
 def get_current_user():
@@ -334,7 +337,7 @@ if __name__ == "__main__":
     # speak("Initializing Ultron..")
     initialize_user_knowledge(get_current_user())
     try:
-        load_user_preferences(get_current_user())
+        ingest_load_user_preferences(get_current_user())
     except Exception as exc:
         print(f"Preferences warning: {exc}")
     speak("Ultron systems Activated. Awaiting for your command Sir.")
