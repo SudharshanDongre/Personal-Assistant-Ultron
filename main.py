@@ -296,6 +296,7 @@ def processCommand(c):
             else:
                 speak("I do not have that in memory yet. You can teach me by saying add to my knowledge followed by your note.")
 
+
 #serach on wikipedia
     elif command_lower.startswith(("what is", "who is", "tell me about", "how to", "how does", "what are", "who are")):
         try:
